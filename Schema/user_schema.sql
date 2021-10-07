@@ -2,31 +2,37 @@ DROP SCHEMA IF EXISTS "User" CASCADE;
 CREATE SCHEMA "User";
 
 CREATE TABLE "User".nameBookmark (
-  "userId" char(10),
-  "c_nconst" char(10)
+  "username" varchar(256) NOT NULL,
+  "nameId" char(10),
+    CONSTRAINT FK_username FOREIGN KEY ("username") REFERENCES user("username"),
+    CONSTRAINT FK_nameId FOREIGN KEY ("nameId") REFERENCES Movie.Name("nameId")
 );
 
 CREATE TABLE "User".titleBookmark (
-  "userId" char(10),
-  "c_tconst" char(10)
+  "username" varchar(256) NOT NULL,
+  "titleId" char(10),
+    CONSTRAINT FK_username FOREIGN KEY ("username") REFERENCES user("username"),
+    CONSTRAINT FK_titleId FOREIGN KEY ("titleId") REFERENCES Movie.titleBasics("titleId")
 );
 
 CREATE TABLE "User".searchHistory (
-  "userId" char(10),
-  "t_searchKey" Text
+  "username" varchar(256) NOT NULL,
+  "searchKey" Text,
+    CONSTRAINT FK_username FOREIGN KEY ("username") REFERENCES user("username")
 );
 
-CREATE TABLE "User".User (
-  "userId" SERIAL UNIQUE PRIMARY KEY,
-  "vc_username" varchar(256) UNIQUE NOT NULL,
-  "vc_password" varchar(256) NOT NULL,
-  "b_isAdmin" bool,
-  "b_isAdult" bool
+CREATE TABLE "User".user (
+  "username" varchar(256) UNIQUE NOT NULL PRIMARY KEY,
+  "password" varchar(256) NOT NULL,
+  "isAdmin" bool,
+  "isAdult" bool
 );
 
 CREATE TABLE "User".ratings (
-  "userId" char(10),
-  "c_tconst" char(10),
-  "i_rate" int4,
-  "t_comment" text
+  "username" varchar(256) NOT NULL,
+  "titleId" char(10),
+  "rate" int4,
+  "comment" text,
+  CONSTRAINT FK_username FOREIGN KEY ("username") REFERENCES user("username"),
+  CONSTRAINT FK_titleId FOREIGN KEY ("titleId") REFERENCES Movie.titleBasics("titleId")
 );
