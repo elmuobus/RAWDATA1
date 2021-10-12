@@ -36,7 +36,7 @@ CREATE OR REPLACE FUNCTION ratings(_titleId char(10), _vote numeric(5, 1), _user
                 SET numvotes = numvotes + 1,
                     averagerating = (averagerating + ((_vote - averagerating) / numvotes))
                     WHERE titleid = _titleId;
-        IF _user IS NOT NULL THEN
+        IF _user IS NOT NULL AND _user IN (SELECT "user".username FROM "user"."user") THEN
                 INSERT INTO "user".ratings(username, "titleId", rate, comment)
                 VALUES(_user, _titleId, _vote, _comment);
         END IF;
