@@ -1,3 +1,30 @@
+
+--D2
+
+CREATE OR REPLACE FUNCTION string_search(string VARCHAR, username VARCHAR)
+RETURNS TABLE(id VARCHAR(10), title VARCHAR)
+LANGUAGE plpgsql AS $$
+DECLARE substring VARCHAR(256);
+BEGIN
+	IF username IS NOT NULL AND username IN (SELECT "user".username FROM "user"."user") THEN
+		INSERT INTO "user".searchhistory
+		VALUES (username, string);
+	END IF;
+	
+	substring := '%' || string || '%';
+
+	RETURN QUERY
+		SELECT titleid::VARCHAR(10) id, primarytitle::VARCHAR title
+		FROM titlebasics NATURAL JOIN omdb_data
+		WHERE primarytitle LIKE substring OR plot LIKE substring;
+END;
+$$;
+
+
+SELECT * FROM string_search('couou', 'TestUser');
+
+
+
 --D3
 CREATE OR REPLACE FUNCTION ratings(_titleId char(10), _vote numeric(5, 1), _user varchar(256), _comment Text)
     RETURNS void
@@ -95,4 +122,120 @@ CREATE OR REPLACE FUNCTION structured_actors_search(_str1 varchar(255), _str2 va
     END;
     $$;
 select * from structured_actors_search('','see','','Mads miKKelsen');
+
+
+--D6
+
+CREATE VIEW players AS
+SELECT titleid, nameid, primaryname
+FROM titleprincipals NATURAL JOIN namebasics
+WHERE category = 'actor' OR category = 'actress';
+
+CREATE OR REPLACE FUNCTION find_co_players(actorname VARCHAR)
+RETURNS TABLE(co_playerid VARCHAR(10), primaryname VARCHAR, frequency INTEGER)
+LANGUAGE plpgsql AS $$
+BEGIN
+	RETURN QUERY
+		SELECT players.nameid::VARCHAR(10) co_playerid, players.primaryname, count(titleid)::INTEGER
+		FROM players
+		WHERE players.primaryname != actorname
+			AND players.titleid IN (SELECT titleid FROM players WHERE actorname = players.primaryname)
+		GROUP BY nameid, players.primaryname
+		HAVING count(titleid) > 0;
+END;
+$$;
+
+--D6
+
+CREATE OR REPLACE FUNCTION find_co_players_by_id(actorid VARCHAR)
+RETURNS TABLE(co_playerid VARCHAR(10), primaryname VARCHAR, frequency INTEGER)
+LANGUAGE plpgsql AS $$
+BEGIN
+	RETURN QUERY
+		SELECT players.nameid::VARCHAR(10) co_playerid, players.primaryname, count(titleid)::INTEGER
+		FROM players
+		WHERE players.nameid != actorid
+			AND players.titleid IN (SELECT titleid FROM players WHERE actorid = players.nameid)
+		GROUP BY nameid, players.primaryname
+		HAVING count(titleid) > 0;
+END;
+$$;
+
+--D7
+
+CREATE OR REPLACE FUNCTION find_rating(actorid VARCHAR)
+RETURNS FLOAT
+LANGUAGE plpgsql AS $$
+DECLARE res FLOAT;
+BEGIN
+		SELECT SUM(averagerating * numvotes) / SUM(numvotes) INTO res
+		FROM titleratings NATURAL JOIN titleprincipals
+		WHERE actorid = titleprincipals.nameid;
+		RETURN res;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE update_name_ratings()
+LANGUAGE plpgsql AS $$
+BEGIN
+		ALTER TABLE namebasics ADD COLUMN IF NOT EXISTS rating FLOAT;
+		
+		UPDATE namebasics
+		SET rating = find_rating(nameid)
+END;
+$$;
+
+----add trigger when change the rating of a movie
+
+--D8
+
+--list actors with movies
+CREATE OR REPLACE FUNCTION popular_actors_in_movie(var_movieid VARCHAR)
+RETURNS TABLE(id VARCHAR, primaryname VARCHAR, rating FLOAT)
+LANGUAGE plpgsql AS $$
+BEGIN
+		RETURN QUERY
+			SELECT nameid::VARCHAR id, namebasics.primaryname, namebasics.rating
+			FROM titleprincipals NATURAL JOIN namebasics
+			WHERE titleid = var_movieid AND (category = 'actor' OR category = 'actress')
+			ORDER BY namebasics.rating DESC;
+END;
+$$;
+
+--list actors with an actor
+CREATE OR REPLACE FUNCTION popular_actors_co_players(var_actorid VARCHAR)
+RETURNS TABLE(id VARCHAR, primaryname VARCHAR, rating FLOAT)
+LANGUAGE plpgsql AS $$
+BEGIN
+		RETURN QUERY
+			SELECT DISTINCT nameid::VARCHAR id, namebasics.primaryname, namebasics.rating
+			FROM titleprincipals NATURAL JOIN namebasics
+			WHERE namebasics.rating IS NOT NULL AND nameid IN (SELECT co_playerid FROM find_co_players_by_id(var_actorid))
+			ORDER BY namebasics.rating DESC;
+END;
+$$;
+
 --D9
+
+CREATE OR REPLACE FUNCTION recommended(title varchar)
+RETURNS TABLE(
+  primarytitle text
+)
+LANGUAGE plpgsql as
+$$
+BEGIN
+	RETURN QUERY
+		WITH main_title(titletype, isadult, genres) AS (
+			SELECT titletype, isadult, genres
+			FROM movie.titlebasics
+			WHERE titleid = title
+		)
+    SELECT DISTINCT t.primarytitle
+		FROM movie.titlebasics t, main_title
+		WHERE  main_title.titletype = t.titletype
+			AND main_title.isadult = t.isadult
+			AND main_title.genres = t.genres;
+END;
+$$;
+
+SELECT recommended('tt10127038');
