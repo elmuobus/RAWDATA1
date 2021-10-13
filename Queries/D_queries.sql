@@ -8,12 +8,10 @@ BEGIN
 		INSERT INTO "user".searchhistory
 		VALUES (username, string);
 	END IF;
-
 	substring := '%' || string || '%';
-
 	RETURN QUERY
 		SELECT titleid::VARCHAR(10) id, primarytitle::VARCHAR title
-		FROM titlebasics NATURAL JOIN omdb_data
+		FROM movie.titlebasics NATURAL JOIN omdb_data
 		WHERE primarytitle LIKE substring OR plot LIKE substring;
 END;
 $$;
@@ -38,7 +36,7 @@ CREATE OR REPLACE FUNCTION ratings(_titleId char(10), _vote numeric(5, 1), _user
     $$;
 
 --D4.
-CREATE OR REPLACE FUNCTION structured_string_search(_str1 varchar(255), _str2 varchar(255), _str3 varchar(255), _str4 varchar(255))
+CREATE OR REPLACE FUNCTION structured_string_search(username VARCHAR, _str1 varchar(255), _str2 varchar(255), _str3 varchar(255), _str4 varchar(255))
     RETURNS TABLE (titleid char(10), primarytitle text)
     LANGUAGE plpgsql AS
     $$
@@ -52,6 +50,10 @@ CREATE OR REPLACE FUNCTION structured_string_search(_str1 varchar(255), _str2 va
         str2 := '%' || _str2 || '%';
         str3 := '%' || _str3 || '%';
         str4 := '%' || _str4 || '%';
+        IF username IS NOT NULL AND username IN (SELECT "user".username FROM "user"."user") THEN
+		INSERT INTO "user".searchhistory(username, "searchKey")
+		VALUES (username, str1 || str2 || str3 || str4);
+		END IF;
         IF _str1 IS NULL THEN
             str1 = '%%';
         END IF;
@@ -180,10 +182,10 @@ RETURNS TABLE(id VARCHAR, primaryname VARCHAR, rating FLOAT)
 LANGUAGE plpgsql AS $$
 BEGIN
 		RETURN QUERY
-			SELECT nameid::VARCHAR id, namebasics.primaryname, namebasics.rating
+			SELECT nameid::VARCHAR id, namebasics.primaryname, rating
 			FROM movie.titleprincipals NATURAL JOIN movie.namebasics
 			WHERE titleid = var_movieid AND (category = 'actor' OR category = 'actress')
-			ORDER BY namebasics.rating DESC;
+			ORDER BY rating DESC;
 END;
 $$;
 
@@ -276,14 +278,14 @@ END $$
 LANGUAGE 'plpgsql';
 
 --BONUS: User Registrations
+DROP FUNCTION registerUser(_user varchar(256), _pwd varchar(256), _isAdmin bool);
 CREATE OR REPLACE FUNCTION registerUser(_user varchar(256), _pwd varchar(256), _isAdmin bool)
-RETURNS varchar(256)
+RETURNS void
 LANGUAGE plpgsql AS
     $$
-    DECLARE res varchar(256);
+    DECLARE res varchar(256) = 'Done';
         BEGIN
-            INSERT INTO "User"."user"("userId", vc_username, vc_password, "b_isAdmin", "b_isAdult")
-            VALUES (DEFAULT, _user, _pwd, _isAdmin, false) INTO res;
-            RETURN res;
+            INSERT INTO "user".user(username, password, isadmin, isadult)
+            VALUES (_user, _pwd, _isAdmin, false);
         END;
     $$;
