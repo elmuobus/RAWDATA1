@@ -117,9 +117,9 @@ CREATE OR REPLACE FUNCTION structured_actors_search(_str1 varchar(255), _str2 va
     $$;
 
 --D6.
-CREATE VIEW players AS
+CREATE OR REPLACE VIEW players AS
 SELECT titleid, nameid, primaryname
-FROM titleprincipals NATURAL JOIN namebasics
+FROM movie.titleprincipals NATURAL JOIN movie.namebasics
 WHERE category = 'actor' OR category = 'actress';
 
 CREATE OR REPLACE FUNCTION find_co_players(actorname VARCHAR)
@@ -158,7 +158,7 @@ LANGUAGE plpgsql AS $$
 DECLARE res FLOAT;
 BEGIN
 		SELECT SUM(averagerating * numvotes) / SUM(numvotes) INTO res
-		FROM titleratings NATURAL JOIN titleprincipals
+		FROM movie.titleratings NATURAL JOIN movie.titleprincipals
 		WHERE actorid = titleprincipals.nameid;
 		RETURN res;
 END;
@@ -167,10 +167,10 @@ $$;
 CREATE OR REPLACE PROCEDURE update_name_ratings()
 LANGUAGE plpgsql AS $$
 BEGIN
-		ALTER TABLE namebasics ADD COLUMN IF NOT EXISTS rating FLOAT;
+		ALTER TABLE movie.namebasics ADD COLUMN IF NOT EXISTS rating FLOAT;
 
-		UPDATE namebasics
-		SET rating = find_rating(nameid)
+		UPDATE movie.namebasics
+		SET rating = find_rating(nameid);
 END;
 $$;
 
@@ -181,7 +181,7 @@ LANGUAGE plpgsql AS $$
 BEGIN
 		RETURN QUERY
 			SELECT nameid::VARCHAR id, namebasics.primaryname, namebasics.rating
-			FROM titleprincipals NATURAL JOIN namebasics
+			FROM movie.titleprincipals NATURAL JOIN movie.namebasics
 			WHERE titleid = var_movieid AND (category = 'actor' OR category = 'actress')
 			ORDER BY namebasics.rating DESC;
 END;
@@ -194,7 +194,7 @@ LANGUAGE plpgsql AS $$
 BEGIN
 		RETURN QUERY
 			SELECT DISTINCT nameid::VARCHAR id, namebasics.primaryname, namebasics.rating
-			FROM titleprincipals NATURAL JOIN namebasics
+			FROM movie.titleprincipals NATURAL JOIN movie.namebasics
 			WHERE namebasics.rating IS NOT NULL AND nameid IN (SELECT co_playerid FROM find_co_players_by_id(var_actorid))
 			ORDER BY namebasics.rating DESC;
 END;
@@ -274,8 +274,6 @@ RAISE NOTICE '%', t;
 RETURN QUERY EXECUTE t;
 END $$
 LANGUAGE 'plpgsql';
-
-SELECT * from best_match('apple', 'mads', 'mikkelsen');
 
 --BONUS: User Registrations
 CREATE OR REPLACE FUNCTION registerUser(_user varchar(256), _pwd varchar(256), _isAdmin bool)
