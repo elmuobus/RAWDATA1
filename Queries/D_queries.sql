@@ -1,3 +1,61 @@
+--D1
+
+DROP FUNCTION registerUser(_user varchar(256), _pwd varchar(256), _isAdmin bool);
+CREATE OR REPLACE FUNCTION registerUser(_user varchar(256), _pwd varchar(256), _isAdmin bool)
+RETURNS void
+LANGUAGE plpgsql AS
+    $$
+    DECLARE res varchar(256) = 'Done';
+        BEGIN
+            INSERT INTO "user".user(username, password, isadmin, isadult)
+            VALUES (_user, _pwd, _isAdmin, false);
+        END;
+    $$;
+
+CREATE OR REPLACE FUNCTION get_titlebookmarks(var_username VARCHAR)
+RETURNS TABLE(titleId VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN
+	RETURN QUERY
+		SELECT titleId
+		FROM "user".titlebookmark
+		WHERE "user".titlebookmark.username = var_username;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION get_namebookmarks(var_username VARCHAR)
+RETURNS TABLE(titleId VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN
+	RETURN QUERY
+		SELECT titleId
+		FROM "user".namebookmark
+		WHERE "user".namebookmark.username = var_username;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION get_ratings(var_username VARCHAR)
+RETURNS TABLE(titleId VARCHAR, rate INTEGER, comment TEXT)
+LANGUAGE plpgsql AS $$
+BEGIN
+	RETURN QUERY
+		SELECT titleId, ratings.rate, ratings.comment
+		FROM "user".ratings
+		WHERE "user".ratings.username = var_username;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION get_searchhistory(var_username VARCHAR)
+RETURNS TABLE(searchKey VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN
+	RETURN QUERY
+		SELECT searchKey
+		FROM "user".searchhistory
+		WHERE "user".searchhistory.username = var_username;
+END;
+$$;
+
 --D2.
 CREATE OR REPLACE FUNCTION string_search(string VARCHAR, username VARCHAR)
 RETURNS TABLE(id VARCHAR(10), title VARCHAR)
@@ -276,16 +334,3 @@ RAISE NOTICE '%', t;
 RETURN QUERY EXECUTE t;
 END $$
 LANGUAGE 'plpgsql';
-
---BONUS: User Registrations
-DROP FUNCTION registerUser(_user varchar(256), _pwd varchar(256), _isAdmin bool);
-CREATE OR REPLACE FUNCTION registerUser(_user varchar(256), _pwd varchar(256), _isAdmin bool)
-RETURNS void
-LANGUAGE plpgsql AS
-    $$
-    DECLARE res varchar(256) = 'Done';
-        BEGIN
-            INSERT INTO "user".user(username, password, isadmin, isadult)
-            VALUES (_user, _pwd, _isAdmin, false);
-        END;
-    $$;
