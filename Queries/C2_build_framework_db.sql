@@ -23,8 +23,8 @@ CREATE  TABLE movie.omdb_data (
   poster VARCHAR(256),
   awards TEXT,
   plot TEXT,
-	  FOREIGN KEY(titleId)
-	  REFERENCES movie.titlebasics
+	FOREIGN KEY(titleId)
+  REFERENCES movie.titleBasics
 );
 
 CREATE TABLE movie.titleEpisode (
@@ -32,8 +32,8 @@ CREATE TABLE movie.titleEpisode (
   parentTId CHAR(10),
   seasonNumber INT4,
   episodeNumber INT4,
-	  FOREIGN KEY(titleId)
-	  REFERENCES movie.titlebasics
+	FOREIGN KEY(titleId)
+	REFERENCES movie.titleBasics
 );
 
 CREATE TABLE movie.titleCrew (
@@ -41,7 +41,7 @@ CREATE TABLE movie.titleCrew (
   directors TEXT,
   writers TEXT,
 	FOREIGN KEY(titleId)
-	REFERENCES movie.titlebasics
+	REFERENCES movie.titleBasics
 );
 
 CREATE TABLE movie.nameBasics (
@@ -64,7 +64,7 @@ CREATE TABLE movie.titlePrincipals (
 	FOREIGN KEY(titleId)
 	REFERENCES movie.titleBasics(titleId),
 	FOREIGN KEY(nameId)
-	REFERENCES movie.namebasics
+	REFERENCES movie.nameBasics
 );
 
 CREATE TABLE movie.wi (
@@ -74,7 +74,7 @@ CREATE TABLE movie.wi (
   lexeme TEXT,
 	PRIMARY KEY(titleId, word, field),
 	FOREIGN KEY(titleId)
-	REFERENCES movie.titlebasics
+	REFERENCES movie.titleBasics
 );
 
 CREATE TABLE movie.titleAkas (
@@ -88,7 +88,7 @@ CREATE TABLE movie.titleAkas (
   isOriginalTitle BOOL,
 	PRIMARY KEY(titleId, ordering),
 	FOREIGN KEY(titleId)
-	REFERENCES movie.titlebasics
+	REFERENCES movie.titleBasics
 );
 
 CREATE TABLE movie.titleRatings (
@@ -96,43 +96,43 @@ CREATE TABLE movie.titleRatings (
   averageRating numeric(5,1),
   numvotes INT4,
 	FOREIGN KEY(titleId)
-	REFERENCES movie.titlebasics
+	REFERENCES movie.titleBasics
 );
 
-INSERT INTO movie.titlebasics(titleId, titleType, primaryTitle, originalTitle, isAdult, startYear, endYear, runtimeMinutes, genres)
+INSERT INTO movie.titleBasics(titleId, titleType, primaryTitle, originalTitle, isAdult, startYear, endYear, runtimeMinutes, genres)
 SELECT tconst, titletype, primarytitle, originaltitle, isadult, startyear, endyear, runtimeminutes, genres
 FROM title_basics;
 
-INSERT INTO movie.titleakas(titleid, ordering, title, region, language, types, attributes, isOriginalTitle)
+INSERT INTO movie.titleAkas(titleId, ordering, title, region, language, types, attributes, isOriginalTitle)
 SELECT titleid, ordering, title, region, language, types, attributes, isoriginaltitle
 FROM title_akas;
 
-INSERT INTO movie.titlecrew(titleid, directors, writers)
+INSERT INTO movie.titleCrew(titleId, directors, writers)
 SELECT tconst, directors, writers
 FROM title_crew;
 
-INSERT INTO movie.titleratings(titleid, averagerating, numvotes)
+INSERT INTO movie.titleRatings(titleId, averageRating, numvotes)
 SELECT tconst, averagerating, numvotes
 FROM title_ratings;
 
-INSERT INTO movie.titleepisode(titleid, parenttid, seasonnumber, episodenumber)
+INSERT INTO movie.titleEpisode(titleId, parentTId, seasonNumber, episodeNumber)
 SELECT tconst, parenttconst, seasonnumber, episodenumber
 FROM title_episode;
 
-INSERT INTO movie.wi(titleid, word, field, lexeme)
+INSERT INTO movie.wi(titleId, word, field, lexeme)
 SELECT tconst, word, field, lexeme
 FROM wi;
 
-INSERT INTO movie.namebasics(nameid, primaryname, birthyear, deathyear, primaryprofession, knownfortitles)
+INSERT INTO movie.nameBasics(nameId, primaryName, birthYear, deathYear, primaryProfession, knownForTitles)
 SELECT nconst, primaryname, birthyear, deathyear, primaryprofession, knownfortitles
 FROM name_basics;
 
-INSERT INTO movie.titleprincipals(titleid, ordering, nameid, category, job, characters)
+INSERT INTO movie.titlePrincipals(titleId, ordering, nameId, category, job, characters)
 SELECT t.tconst, t.ordering, t.nconst, t.category, t.job, t.characters
 FROM title_principals t, name_basics n
 WHERE t.nconst=n.nconst;
 
-INSERT INTO movie.omdb_data(titleid, poster, awards, plot)
+INSERT INTO movie.omdb_data(titleId, poster, awards, plot)
 SELECT o.tconst, o.poster, o.awards, o.plot
 FROM omdb_data o, title_basics t
 WHERE o.tconst = t.tconst;
@@ -142,35 +142,41 @@ WHERE o.tconst = t.tconst;
 CREATE TABLE "user".user (
   username varchar(256) UNIQUE NOT NULL PRIMARY KEY,
   password varchar(256) NOT NULL,
+  salt varchar(256) NOT NULL,
   isAdmin bool,
   isAdult bool
 );
 
 CREATE TABLE "user".nameBookmark
 (
-    username varchar(256) NOT NULL,
-    nameId char(10) REFERENCES Movie.namebasics(nameid),
-    CONSTRAINT FK_username FOREIGN KEY (username) REFERENCES "user".user(username)
+  username varchar(256) NOT NULL,
+  nameId char(10),
+  PRIMARY KEY(username, nameId),
+  CONSTRAINT FK_username FOREIGN KEY (username) REFERENCES "user".user(username), 
+  CONSTRAINT FK_nameId FOREIGN KEY (nameId) REFERENCES Movie.namebasics(nameId)
 );
 
 CREATE TABLE "user".titleBookmark (
-  "username" varchar(256) NOT NULL,
-  "titleId" char(10),
-    CONSTRAINT FK_username FOREIGN KEY (username) REFERENCES "user".user(username),
-    CONSTRAINT FK_titleId FOREIGN KEY ("titleId") REFERENCES Movie.titlebasics("titleid")
+  username varchar(256) NOT NULL,
+  titleId char(10),
+  PRIMARY KEY(username, titleId),
+  CONSTRAINT FK_username FOREIGN KEY (username) REFERENCES "user".user(username),
+  CONSTRAINT FK_titleId FOREIGN KEY (titleId) REFERENCES Movie.titlebasics(titleId)
 );
 
 CREATE TABLE "user".searchHistory (
-  "username" varchar(256) NOT NULL,
-  "searchKey" Text,
-    CONSTRAINT FK_username FOREIGN KEY (username) REFERENCES "user".user(username)
+  username varchar(256) NOT NULL,
+  searchKey Text,
+  PRIMARY KEY(username, searchKey),
+  CONSTRAINT FK_username FOREIGN KEY (username) REFERENCES "user".user(username)
 );
 
 CREATE TABLE "user".ratings (
-  "username" varchar(256) NOT NULL,
-  "titleId" char(10),
-  "rate" int4,
-  "comment" text,
-    CONSTRAINT FK_username FOREIGN KEY (username) REFERENCES "user".user(username),
-  CONSTRAINT FK_titleId FOREIGN KEY ("titleId") REFERENCES Movie.titlebasics("titleid")
+  username varchar(256) NOT NULL,
+  titleId char(10),
+  rate int4,
+  comment text,
+  PRIMARY KEY(username, titleId),
+  CONSTRAINT FK_username FOREIGN KEY (username) REFERENCES "user".user(username),
+  CONSTRAINT FK_titleId FOREIGN KEY (titleId) REFERENCES Movie.titlebasics(titleId)
 );
