@@ -7,7 +7,7 @@ CREATE SCHEMA "user"; -- Create user table
 -- Adding MOVIE Framework
 
 CREATE TABLE movie.titleBasics (
-  titleId CHAR(10) UNIQUE NOT NULL PRIMARY KEY,
+  titleId VARCHAR UNIQUE NOT NULL PRIMARY KEY,
   titleType VARCHAR(20),
   primaryTitle TEXT,
   originalTitle TEXT,
@@ -19,7 +19,7 @@ CREATE TABLE movie.titleBasics (
 );
 
 CREATE  TABLE movie.omdb_data (
-  titleId CHAR(10) UNIQUE NOT NULL PRIMARY KEY,
+  titleId VARCHAR UNIQUE NOT NULL PRIMARY KEY,
   poster VARCHAR(256),
   awards TEXT,
   plot TEXT,
@@ -28,7 +28,7 @@ CREATE  TABLE movie.omdb_data (
 );
 
 CREATE TABLE movie.titleEpisode (
-  titleId CHAR(10) UNIQUE NOT NULL PRIMARY KEY,
+  titleId VARCHAR UNIQUE NOT NULL PRIMARY KEY,
   parentTId CHAR(10),
   seasonNumber INT4,
   episodeNumber INT4,
@@ -37,7 +37,7 @@ CREATE TABLE movie.titleEpisode (
 );
 
 CREATE TABLE movie.titleCrew (
-  titleId CHAR(10) UNIQUE NOT NULL PRIMARY KEY,
+  titleId VARCHAR UNIQUE NOT NULL PRIMARY KEY,
   directors TEXT,
   writers TEXT,
 	FOREIGN KEY(titleId)
@@ -45,7 +45,7 @@ CREATE TABLE movie.titleCrew (
 );
 
 CREATE TABLE movie.nameBasics (
-  nameId VARCHAR(256) UNIQUE NOT NULL PRIMARY KEY,
+  nameId VARCHAR UNIQUE NOT NULL PRIMARY KEY,
   primaryName VARCHAR(256),
   birthYear CHAR(4),
   deathYear CHAR(4),
@@ -54,9 +54,9 @@ CREATE TABLE movie.nameBasics (
 );
 
 CREATE TABLE movie.titlePrincipals (
-  titleId CHAR(10) NOT NULL,
+  titleId VARCHAR NOT NULL,
   ordering INT4,
-  nameId CHAR(10),
+  nameId VARCHAR,
   category VARCHAR(50),
   job TEXT,
   characters TEXT,
@@ -68,7 +68,7 @@ CREATE TABLE movie.titlePrincipals (
 );
 
 CREATE TABLE movie.wi (
-  titleId CHAR(10) NOT NULL,
+  titleId VARCHAR NOT NULL,
   word TEXT,
   field CHAR(1),
   lexeme TEXT,
@@ -78,7 +78,7 @@ CREATE TABLE movie.wi (
 );
 
 CREATE TABLE movie.titleAkas (
-  titleId CHAR(10) NOT NULL,
+  titleId VARCHAR NOT NULL,
   ordering INT4,
   title TEXT,
   region VARCHAR(10),
@@ -92,7 +92,7 @@ CREATE TABLE movie.titleAkas (
 );
 
 CREATE TABLE movie.titleRatings (
-  titleId CHAR(10) UNIQUE NOT NULL PRIMARY KEY,
+  titleId VARCHAR UNIQUE NOT NULL PRIMARY KEY,
   averageRating numeric(5,1),
   numvotes INT4,
 	FOREIGN KEY(titleId)
@@ -140,40 +140,40 @@ WHERE o.tconst = t.tconst;
 -- Adding User Framework
 
 CREATE TABLE "user".user (
-  username varchar(256) UNIQUE NOT NULL PRIMARY KEY,
-  password varchar(256) NOT NULL,
-  salt varchar(256) NOT NULL,
+  username VARCHAR(256) UNIQUE NOT NULL PRIMARY KEY,
+  password VARCHAR(256) NOT NULL,
+  salt VARCHAR(256) NOT NULL,
   isAdmin bool,
   isAdult bool
 );
 
 CREATE TABLE "user".nameBookmark
 (
-  username varchar(256) NOT NULL,
-  nameId char(10),
+  username VARCHAR(256) NOT NULL,
+  nameId VARCHAR,
   PRIMARY KEY(username, nameId),
   CONSTRAINT FK_username FOREIGN KEY (username) REFERENCES "user".user(username), 
   CONSTRAINT FK_nameId FOREIGN KEY (nameId) REFERENCES Movie.namebasics(nameId)
 );
 
 CREATE TABLE "user".titleBookmark (
-  username varchar(256) NOT NULL,
-  titleId char(10),
+  username VARCHAR(256) NOT NULL,
+  titleId VARCHAR,
   PRIMARY KEY(username, titleId),
   CONSTRAINT FK_username FOREIGN KEY (username) REFERENCES "user".user(username),
   CONSTRAINT FK_titleId FOREIGN KEY (titleId) REFERENCES Movie.titlebasics(titleId)
 );
 
 CREATE TABLE "user".searchHistory (
-  username varchar(256) NOT NULL,
+  username VARCHAR(256) NOT NULL,
   searchKey Text,
   PRIMARY KEY(username, searchKey),
   CONSTRAINT FK_username FOREIGN KEY (username) REFERENCES "user".user(username)
 );
 
 CREATE TABLE "user".ratings (
-  username varchar(256) NOT NULL,
-  titleId char(10),
+  username VARCHAR(256) NOT NULL,
+  titleId VARCHAR,
   rate int4,
   comment text,
   PRIMARY KEY(username, titleId),
