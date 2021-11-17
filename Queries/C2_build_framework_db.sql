@@ -28,8 +28,8 @@ CREATE  TABLE movie.omdb_data (
 );
 
 CREATE TABLE movie.titleEpisode (
-  titleId VARCHAR UNIQUE NOT NULL PRIMARY KEY,
-  parentTId CHAR(10),
+  episodeId VARCHAR UNIQUE NOT NULL PRIMARY KEY,
+  titleId CHAR(10),
   seasonNumber INT4,
   episodeNumber INT4,
 	FOREIGN KEY(titleId)
@@ -115,7 +115,7 @@ INSERT INTO movie.titleRatings(titleId, averageRating, numvotes)
 SELECT tconst, averagerating, numvotes
 FROM title_ratings;
 
-INSERT INTO movie.titleEpisode(titleId, parentTId, seasonNumber, episodeNumber)
+INSERT INTO movie.titleEpisode(episodeId, titleId, seasonNumber, episodeNumber)
 SELECT tconst, parenttconst, seasonnumber, episodenumber
 FROM title_episode;
 
