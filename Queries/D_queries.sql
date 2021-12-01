@@ -291,7 +291,7 @@ DROP COLUMN lexeme;
 DROP FUNCTION IF EXISTS exact_match(text[]);
 CREATE or replace FUNCTION exact_match(VARIADIC w text[])
 RETURNS TABLE(
-titleid char(10),
+titleid VARCHAR,
 primarytitle text
 ) AS $$
 DECLARE
@@ -314,7 +314,7 @@ LANGUAGE 'plpgsql';
 --D12.
 CREATE or replace FUNCTION best_match(VARIADIC w text[])
 RETURNS TABLE(
-titleid char(10),
+titleid VARCHAR,
 rank bigint,
 primarytitle text
 ) AS $$
