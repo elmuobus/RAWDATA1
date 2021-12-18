@@ -386,3 +386,6 @@ RAISE NOTICE '%', t;
 RETURN QUERY EXECUTE t;
 END $$
 LANGUAGE 'plpgsql';
+
+--index for best/exact match functions
+create INDEX wiindex on movie.wi(word);
