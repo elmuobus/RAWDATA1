@@ -334,3 +334,55 @@ RAISE NOTICE '%', t;
 RETURN QUERY EXECUTE t;
 END $$
 LANGUAGE 'plpgsql';
+
+
+--safe d11
+CREATE or replace FUNCTION safe_exact_match(searchstring text)
+RETURNS TABLE(
+titleid VARCHAR,
+primarytitle text
+) AS $$
+DECLARE
+w text[];
+w_elem text;
+t text = '';
+BEGIN
+w = string_to_array(searchstring, ',');
+t := 'SELECT t.titleid, primarytitle FROM movie.titlebasics t, ';
+t := t || ' (select w.titleid from movie.wi w where w.word = ''' || w[1] || ''' ';
+FOREACH w_elem IN ARRAY w[2:]
+LOOP
+t := t || 'INTERSECT ';
+t := t || 'select w.titleid from movie.wi w where w.word = ''' || w_elem || ''' ';
+END LOOP;
+t := t || ') w WHERE t.titleid=w.titleid;';
+RAISE NOTICE '%', t;
+RETURN QUERY EXECUTE t;
+END $$
+LANGUAGE 'plpgsql';
+
+--safe d12
+CREATE or replace FUNCTION safe_best_match(searchstring text)--maybe varchar
+RETURNS TABLE(
+titleid VARCHAR,
+rank bigint,
+primarytitle text
+) AS $$
+DECLARE
+w_elem text; --each element
+w text[];
+t text = '';
+BEGIN
+w = string_to_array(searchstring, ',');
+t := 'SELECT t.titleid, sum(relevance) rank, primarytitle FROM movie.titlebasics t, ';
+t := t || ' (select w.titleid, 1 relevance from movie.wi w where w.word = ''' || w[1] || ''' ';
+FOREACH w_elem IN ARRAY w[2:]
+LOOP
+t := t || 'UNION ALL ';
+t := t || 'select w.titleid, 1 relevance from movie.wi w where w.word = ''' || w_elem || ''' ';
+END LOOP;
+t := t || ') w WHERE t.titleid=w.titleid GROUP BY t.titleid, t.primarytitle ORDER BY rank DESC;';
+RAISE NOTICE '%', t;
+RETURN QUERY EXECUTE t;
+END $$
+LANGUAGE 'plpgsql';
